@@ -1,0 +1,25 @@
+{
+  "name": "electron-fulltext-search-demo",
+  "version": "1.0.0",
+  "description": "electron fulltext search demo",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/electron/electron-quick-start",
+  "keywords": [
+    "Electron",
+    "fulltext",
+    "search-index"
+  ],
+  "author": "GitHub",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "^11.3.0"
+  },
+  "dependencies": {
+    "mockjs": "^1.1.0",
+    "nodejieba": "^2.5.1",
+    "search-index": "^2.2.0"
+  }
+}
