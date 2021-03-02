@@ -170,11 +170,11 @@ window.nim.getLocalMsgs({
   // 30 天前
   start: new Date().getTime() - 1000 * 60 * 60 * 24 * 30,
   end: new Date().getTime(),
-  limit: 999999,
+  limit: Infinity,
   done(err, obj) {
     if (err) return
     // 删除该 idClient 的记录
-    putFts(obj)
+    putFts(obj.msgs)
   }
 });
 ```
