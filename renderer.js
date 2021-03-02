@@ -1,208 +1,192 @@
-// This file is required by the index.html file and will
-// be executed in the renderer process for that window.
-// No Node.js APIs are available in this process because
-// `nodeIntegration` is turned off. Use `preload.js` to
-// selectively enable features needed in the rendering
-// process.
-
-var Mock = window.require('mockjs');
 var nodejieba = window.require('nodejieba');
-var result = nodejieba.cut('一个南京市长江大桥');
-console.log('~~~~~~~', result);
-
 const si = require('search-index')
+var SDK = require('./lib/NIM_Web_SDK_v8.3.0_test')
 
 let searchDB
 
 si({
-  name: 'ELECTRON-FULLTEXT-SEARCH-DB'
+  name: 'ELECTRON-FULLTEXT-SEARCH-DB',
+  storeVectors: true
 }).then((result) => {
   searchDB = result;
 })
 
-// 大约是 1369.73 MB
+function doLog(err, obj) {
+  console.log('receive: ', err, obj)
+}
 
 const ignoreChars = " \t\r\n~!@#$%^&*()_+-=【】、{}|;':\"，。、《》？αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ。，、；：？！…—·ˉ¨‘’“”々～‖∶＂＇｀｜〃〔〕〈〉《》「」『』．〖〗【】（）［］｛｝ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫ⒈⒉⒊⒋⒌⒍⒎⒏⒐⒑⒒⒓⒔⒕⒖⒗⒘⒙⒚⒛㈠㈡㈢㈣㈤㈥㈦㈧㈨㈩①②③④⑤⑥⑦⑧⑨⑩⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇≈≡≠＝≤≥＜＞≮≯∷±＋－×÷／∫∮∝∞∧∨∑∏∪∩∈∵∴⊥∥∠⌒⊙≌∽√§№☆★○●◎◇◆□℃‰€■△▲※→←↑↓〓¤°＃＆＠＼︿＿￣―♂♀┌┍┎┐┑┒┓─┄┈├┝┞┟┠┡┢┣│┆┊┬┭┮┯┰┱┲┳┼┽┾┿╀╁╂╃└┕┖┗┘┙┚┛━┅┉┤┥┦┧┨┩┪┫┃┇┋┴┵┶┷┸┹┺┻╋╊╉╈╇╆╅╄";
 
-// 这样一条 msg，大概是 2.11857421875 kb，那么 200mb 的 db 乐观估计是十万条。
-var obj = {
-  cc: true,
-  "flow|1": [
-    "out",
-    "in",
-  ],
-  "from|1": [
-    "cjhz1",
-    "wangsitu1",
-    "cs1",
-    "cs2",
-    "cs3",
-    "cs4"
-  ],
-  "fromClientType|1": [
-    "Web",
-    "Android",
-    "IOS"
-  ],
-  "fromDeviceId|1": [
-    "2fb0d8c26d874a4790a92719a186bea0",
-    "3ab0ddc2rtjk4a4790a92719o98jbAa1",
-    "4ab0ddc2rtjk4a4790a92719o98jbAa1",
-  ],
-  "fromNick|1": [
-    "cjhz1",
-    "wangsitu1",
-    "cs1",
-    "cs2",
-    "cs3",
-    "cs4"
-  ],
-  "idClient": /\w{32}/,
-  "idServer": /\d{12}/,
-  isHistoryable: true,
-  isLocal: false,
-  isOfflinable: true,
-  isPushable: true,
-  isReplyMsg: true,
-  isRoamingable: true,
-  isSyncable: true,
-  isUnreadable: true,
-  needMsgReceipt: false,
-  needPushNick: true,
-  resend: false,
-  scene: "p2p",
-  "sessionId": /p2p-cs\d{3}/,
-  status: "success",
-  "target|1": [
-    "cjhz1",
-    "wangsitu1",
-    "cs1",
-    "cs2",
-    "cs3",
-    "cs4"
-  ],
-  text: Mock.Random.cparagraph(2, 10),
-  "time|1600000000000-1700000000000": 1,
-  "to|1": [
-    "cjhz1",
-    "wangsitu1",
-    "cs1",
-    "cs2",
-    "cs3",
-    "cs4"
-  ],
-  type: "text",
-  "userUpdateTime|1600000000000-1700000000000": 1
-}
-
-var request = window.indexedDB.open('nim-cjhz2');
-var db;
-
-request.onerror = function (event) {
-  console.log('数据库打开报错', event);
-};
-
-request.onsuccess = function (event) {
-  db = request.result;
-  console.log('数据库打开成功，拥有三个方法：writeData、readByKeyword、readByPrimary、printUseSize');
-};
-
-request.onupgradeneeded = function (event) {
-  db = event.target.result;
-  var objectStore;
-  console.log('onupgradeneeded：', db.objectStoreNames);
-  if (!db.objectStoreNames.contains('msg1')) {
-    var objectStore = db.createObjectStore(
-      'msg1',
-      // { keyPath: 'id', autoIncrement: true }
-      { keyPath: 'idClient' }
-    );
-    objectStore.createIndex('idx_idClient', 'idClient', { unique: true });
-    // objectStore.createIndex('idx_fulltext', 'terms', { multiEntry: true });
+async function putFts(msgs) {
+  if (Object.prototype.toString.call(msgs) !== '[object Array]') {
+    msgs = [msgs]
   }
+  // 分词，并过滤无意义的符号
+  var fts = msgs.filter(msg => msg.text && msg.idClient).map(msg => ({
+    idx: nodejieba.cut(msg.text).filter(word => !ignoreChars.includes(word)),
+    _id: msg.idClient
+  }))
+  await searchDB.PUT(fts);
+  console.log('search-index save success ', fts)
 }
 
-function readByPrimary(id) {
-  var transaction = db.transaction(['msg1']);
-  var objectStore = transaction.objectStore('msg1');
-  var request = objectStore.get(id);
-
-  console.time('readByPrimary last')
-  request.onerror = function(event) {
-    console.log('事务失败');
-  };
-
-  request.onsuccess = function(event) {
-    console.timeEnd('readByPrimary last')
-    if (request.result) {
-      console.log('GET: ', request.result);
-    } else {
-      console.log('未获得数据记录');
-    }
-  };
-}
-
-async function readByKeyword(text, limit) {
-  // var transaction = db.transaction(['msg1']);
-  // var objectStore = transaction.objectStore('msg1');
-  // var index = objectStore.index('idx_fulltext');
-
-  console.time('readByKeyword last')
-  // FullText.search(index, text, 'ch', ids => {
-  //   console.log('query:', text, 'results:', ids);
-  //   console.timeEnd('readByKeyword last')
-  // }, limit)
-
-  // searchDB.INDEX.STORE.clear()  清除所有
+async function queryFts(text, limit = 100) {
   var searchParams = nodejieba.cut(text).filter(word => !ignoreChars.includes(word))
-  await searchDB.QUERY({
+  let records = await searchDB.QUERY({
     SEARCH: searchParams
-  }).then(console.log)
-  console.timeEnd('readByKeyword last')
+  })
+  window.nim.getLocalMsgsByIdClients({
+    idClients: records.RESULT.map(item => item._id).slice(0, limit),
+    done: function (err, obj) {
+      console.log('查询本地消息' + (!err ? '成功' : '失败'), err, obj);
+    }
+  })
 }
 
-function writeData(num = 100) {
-  var transaction = db.transaction(['msg1'], 'readwrite');
-  var objectStore = transaction.objectStore('msg1');
-
-  console.log('写事务开始：');
-
-  let tempTime = new Date().getTime()
-
-  let fts = []
-
-  for (let i = 0; i < num; i++) {
-    let temp = Mock.mock(obj)
-    let text = Mock.Random.cparagraph(2, 10);
-    fts.push({
-      _id: temp.idClient,
-      idx: nodejieba.cut(text).filter(word => !ignoreChars.includes(word))
-    })
-    objectStore.add({
-      ...temp,
-      text: text
-      // terms: FullText.tokenize(temp.text, 'ch').filter(word => !ignoreChars.includes(word))
-      // terms: nodejieba.cut(temp.text).filter(word => !ignoreChars.includes(word))
-    });
+async function deleteFts(_ids) {
+  if (Object.prototype.toString.call(_ids) !== '[object Array]') {
+    _ids = [_ids]
   }
-
-  searchDB.PUT(fts).then(() => {
-    console.log('search-index save success, last: ', new Date().getTime() - tempTime)
-  });
-
-  // do add 100 times
-  transaction.oncomplete = function (event) {
-    console.log('transaction success, writeData last: ', new Date().getTime() - tempTime);
-  };
-
-  transaction.onerror = function (event) {
-    console.log('transaction error: ' + transaction.error);
-  };
-
+  await searchDB.DELETE(_ids)
+  console.log('成功删除：', _ids)
 }
 
-async function printUseSize() {
-  var obj = await navigator.storage.estimate();
-  var size = (obj.usageDetails.indexedDB / 1024 / 1024).toFixed(2);
-  console.log(`${size} MB`)
-}
+window.nim = SDK.NIM.getInstance({
+  debug: true,
+  appKey: 'fe416640c8e8a72734219e1847ad2547',
+  account: 'cs6',
+  token: 'e10adc3949ba59abbe56e057f20f883e',
+  // db: form.db,
+  // syncSessionUnread: form.syncSessionUnread,
+  // autoMarkRead: form.syncSessionUnread,
+  reconnectionDelay: 1000, // 在第一次尝试重连之前最初等待多长时间
+  reconnectionDelayMax: 60000, // 重新连接之间等待的最大时间
+  reconnectionJitter: 0, // 重连等待时间振荡值
+
+  onconnect(obj) {
+    console.log('连接建立成功', obj);
+    // if (loginInfo) {
+      // 连接上以后更新uid
+      // commit('updateUserUID', loginInfo)
+    // }
+  },
+  onerror() {
+    // alert(JSON.stringify(event))
+    // debugger
+    console.error('error');
+    // location.href = config.loginUrl
+  },
+  onwillreconnect(obj) {
+    console.log(obj)
+  },
+  ondisconnect: function onDisconnect (error) {
+    let map = {
+      PC: '电脑版',
+      Web: '网页版',
+      Android: '手机版',
+      iOS: '手机版',
+      WindowsPhone: '手机版'
+    }
+    let str = error.from
+    let errorMsg = `你的帐号于${new Date()}被${(map[str] || '其他端')}踢出下线，请确定帐号信息安全!`
+    switch (error.code) {
+      // 账号或者密码错误, 请跳转到登录页面并提示错误
+      case 302:
+        console.log('帐号或密码错误');
+        break
+      // 被踢, 请提示错误后跳转到登录页面
+      case 'kicked':
+        console.log('被踢')
+        break
+      default:
+        console.error(error);
+        break
+    }
+  },
+
+  /* 关系（静默，黑名单）及好友，同步及更新 */
+  onfriends: doLog,
+  onsyncfriendaction: doLog,
+  // onmutelist: doLog,
+  // onsyncmarkinmutelist: doLog,
+  onblacklist: doLog,
+  onsyncmarkinblacklist: doLog,
+
+  /* 用户信息/名片，同步及更新 */
+  onmyinfo: doLog,
+  onupdatemyinfo: doLog,
+  onusers: doLog,
+  onupdateuser: doLog,
+
+  /* 群组信息，同步及更新 */
+  onteams: doLog,
+  onsynccreateteam: doLog,
+  onteammembers: doLog,
+  onCreateTeam: doLog,
+  onDismissTeam: doLog,
+  onUpdateTeam: doLog,
+  onAddTeamMembers: doLog,
+  onRemoveTeamMembers: doLog,
+  onUpdateTeamManagers: doLog,
+  onupdateteammember: doLog,
+  onUpdateTeamMembersMute: doLog,
+  onTeamMsgReceipt: doLog,
+
+  /* 超级群，同步及更新 */
+  onSuperTeams: doLog,
+  onSyncCreateSuperTeam: doLog,
+  onUpdateSuperTeam: doLog,
+  onUpdateSuperTeamMember: doLog,
+  onAddSuperTeamMembers: doLog,
+  onRemoveSuperTeamMembers: doLog,
+  onDismissSuperTeam: doLog,
+  // onTransferSuperTeam: doLog,
+  onUpdateSuperTeamMembersMute: doLog,
+
+  /* 会话 */
+  onsessions: doLog,
+  onupdatesession: doLog,
+
+  /* 消息 */
+  onroamingmsgs: function(obj) {
+    putFts(obj)
+  },
+  onofflinemsgs: function(obj) {
+    putFts(obj)
+  },
+  onmsg: function(obj) {
+    putFts(obj)
+  },
+
+  /* 系统通知 */
+  onsysmsg: doLog,
+  onofflinesysmsgs: doLog,
+  onupdatesysmsg: doLog,
+  onsysmsgunread: doLog,
+  onupdatesysmsgunread: doLog,
+  onofflinecustomsysmsgs: doLog,
+  oncustomsysmsg: doLog,
+
+  onStickTopSessions: function(session) {
+    console.log('收到置顶会话列表', session);
+  },
+
+  /* 同步完成 */
+  onsyncdone: function onSyncDone () {
+    // store.commit('setLoading', false)
+    console.log('onsyncdone')
+  }
+});
+
+
+// window.nim.sendText({
+//   scene: 'p2p',
+//   to: 'cs2',
+//   text: '春眠不觉晓',
+//   done(err, obj) {
+//     if (err) return
+//     // 发送失败的时候可能无 idClient
+//     if (!obj.idClient) return
+//     putFts(obj)
+//   }
+// })
