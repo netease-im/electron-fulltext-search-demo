@@ -66,8 +66,13 @@ async function queryFts(text, limit = 100) {
   let records = await searchDB.QUERY({
     SEARCH: searchParams
   })
+  let idClients = records.RESULT.map(item => item._id).slice(0, limit);
+  if (!idClients) {
+    console.log('查询本地消息，无匹配词')
+    return;
+  }
   window.nim.getLocalMsgsByIdClients({
-    idClients: records.RESULT.map(item => item._id).slice(0, limit),
+    idClients,
     done: function (err, obj) {
       console.log('查询本地消息' + (!err ? '成功' : '失败'), err, obj);
     }
@@ -129,26 +134,28 @@ window.nim.sendText({
 // 撤回消息
 window.nim.deleteMsg({
   msg: {
-    scene: 'p2p',
-    idClient: '*****'
+    scene: "p2p",
+    sessionId: "p2p-******",
+    idClient: 'ef1a89e0aaa*******12391d7db22849'
   },
   done(err, obj) {
     if (err) return
     // 删除该 idClient 的记录
-    deleteFts('*****')
+    deleteFts('ef1a89e0aaa*******12391d7db22849')
   }
 })
 
 // 本地删除消息
 window.nim.deleteLocalMsg({
   msg: {
-    // ...
-    idClient: '*****'
+    scene: "p2p",
+    sessionId: "p2p-******",
+    idClient: 'ef1a89e0aaa*******12391d7db22849'
   },
   done(err, obj) {
     if (err) return
     // 删除该 idClient 的记录
-    deleteFts('*****')
+    deleteFts('ef1a89e0aaa*******12391d7db22849')
   }
 });
 ```

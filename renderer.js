@@ -35,8 +35,13 @@ async function queryFts(text, limit = 100) {
   let records = await searchDB.QUERY({
     SEARCH: searchParams
   })
+  let idClients = records.RESULT.map(item => item._id).slice(0, limit);
+  if (!idClients) {
+    console.log('查询本地消息，无匹配词')
+    return;
+  }
   window.nim.getLocalMsgsByIdClients({
-    idClients: records.RESULT.map(item => item._id).slice(0, limit),
+    idClients,
     done: function (err, obj) {
       console.log('查询本地消息' + (!err ? '成功' : '失败'), err, obj);
     }
