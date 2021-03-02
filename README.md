@@ -125,6 +125,15 @@ window.nim.sendText({
   }
 })
 
+// 直接插入本地消息
+window.nim.saveMsgsToLocal({
+  msgs: msgs,
+  done(err, obj) {
+    if (err) return
+    putFts(obj)
+  }
+})
+
 // 撤回消息
 window.nim.deleteMsg({
   msg: {
@@ -154,6 +163,22 @@ window.nim.deleteLocalMsg({
 });
 ```
 
+5. 若是希望拉取数据库存量的 msg 记录做索引，可尝试使用 getLocalMsgs 获取本地消息。
+
+```js
+window.nim.getLocalMsgs({
+  // 30 天前
+  start: new Date().getTime() - 1000 * 60 * 60 * 24 * 30,
+  end: new Date().getTime(),
+  limit: 999999,
+  done(err, obj) {
+    if (err) return
+    // 删除该 idClient 的记录
+    putFts(obj)
+  }
+});
+```
+
 附 [search-index API 文档](https://github.com/fergiemcdowall/search-index) 其他常用的 api 说明
 
 ```
@@ -164,6 +189,24 @@ searchDB.FLUSH().then(console.log)
 searchDB.ALL_DOCUMENTS().then(console.log)
 ```
 
+## Question
+
+1. 加入切换了账号登录，账号间的数据怎么做隔离
+
+si 的 name 代表这打开哪个数据库，换个数据库名存储。
+
+```js
+const si = require('search-index')
+
+let searchDB
+
+si({
+  name: 'ELECTRON-FULLTEXT-SEARCH-DB-WITH-YOUR-ACCOUNT',
+  storeVectors: true
+}).then((result) => {
+  searchDB = result;
+})
+```
 ## reference resources
 
 * [nodejieba](https://github.com/yanyiwu/nodejieba)
