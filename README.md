@@ -5,19 +5,13 @@ electron fulltext demo by [search-index](https://github.com/fergiemcdowall/searc
 node 12+
 ## how to start
 
+git clone 后
+
 ```
 > npm install
 
 > npm run start
 ```
-
-## how to use
-
-There are three methods to open the database: `writedata`, `readbykeyword`, `readbyprimary`, and `printusesize`
-
-![](https://yx-web-nosdn.netease.im/quickhtml%2Fassets%2Fyunxin%2FELECTRON-FULLTEXT-SEARCH-DB%2F1614221330717.jpg)
-
-![](https://yx-web-nosdn.netease.im/quickhtml%2Fassets%2Fyunxin%2FELECTRON-FULLTEXT-SEARCH-DB%2F1614221398901.jpg)
 
 ## 结合 NIM 接入全文索引
 
