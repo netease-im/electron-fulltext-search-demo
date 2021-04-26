@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "mockjs": "^1.1.0",
-    "nodejieba": "^2.5.1",
+    "nodejieba": "^2.5.2",
     "search-index": "^2.2.0"
   }
 }
