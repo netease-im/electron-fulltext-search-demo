@@ -20,6 +20,6 @@
   "dependencies": {
     "mockjs": "^1.1.0",
     "nodejieba": "^2.5.1",
-    "search-index": "^2.2.0"
+    "search-index": "^3.0.3"
   }
 }
